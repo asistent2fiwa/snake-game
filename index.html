@@ -60,12 +60,39 @@ h1{font-size:clamp(2.5rem,10vw,4rem);font-weight:900;color:#22c55e;text-shadow:0
 <button class="btn" id="rb">PRØV IGEN</button>
 </div>
 <script>
-// Eksotiske lyde
 const ctx=new(window.AudioContext||window.webkitAudioContext)();
-function play(type){
+var lastEat=0,steps=0;
+function play(type,extra){
 if(ctx.state=='suspended')ctx.resume();
+if(type==='step'){
+steps++;
+var timeSinceEat=steps-lastEat;
+var baseFreq=200;
+if(timeSinceEat<5)baseFreq=600;
+else if(timeSinceEat<10)baseFreq=500;
+else if(timeSinceEat<20)baseFreq=400;
+else if(timeSinceEat<35)baseFreq=300;
+else baseFreq=180;
+var osc=ctx.createOscillator(),gain=ctx.createGain();
+osc.type='sine';osc.connect(gain);gain.connect(ctx.destination);
+osc.frequency.setValueAtTime(baseFreq,ctx.currentTime);
+gain.gain.setValueAtTime(0.03,ctx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.05);
+osc.start();osc.stop(ctx.currentTime+0.05);
+if(timeSinceEat>30){
+var osc2=ctx.createOscillator(),gain2=ctx.createGain();
+osc2.type='sine';osc2.connect(gain2);gain2.connect(ctx.destination);
+osc2.frequency.setValueAtTime(100,ctx.currentTime);
+gain2.gain.setValueAtTime(0.05,ctx.currentTime);
+gain2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.1);
+osc2.start();osc2.stop(ctx.currentTime+0.1);
+}
+}
 if(type==='eat'){
-var f=400+Math.random()*400;
+lastEat=steps;
+var f=400+extra*30;
+for(var i=0;i<2;i++){
+setTimeout(function(){
 var osc=ctx.createOscillator(),gain=ctx.createGain();
 osc.type='sine';osc.connect(gain);gain.connect(ctx.destination);
 osc.frequency.setValueAtTime(f,ctx.currentTime);
@@ -73,22 +100,14 @@ osc.frequency.exponentialRampToValueAtTime(f*1.5,ctx.currentTime+0.1);
 gain.gain.setValueAtTime(0.15,ctx.currentTime);
 gain.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.15);
 osc.start();osc.stop(ctx.currentTime+0.15);
-setTimeout(function(){
-var o=ctx.createOscillator(),g=ctx.createGain();
-o.type='sine';o.connect(g);g.connect(ctx.destination);
-o.frequency.setValueAtTime(f*1.5,g.ctx.currentTime);
-o.frequency.exponentialRampToValueAtTime(f*2,g.ctx.currentTime+0.1);
-g.gain.setValueAtTime(0.1,g.ctx.currentTime);
-g.gain.exponentialRampToValueAtTime(0.01,g.ctx.currentTime+0.1);
-o.start();o.stop(g.ctx.currentTime+0.1);
-},80);
+},i*80);
+}
 }
 if(type==='die'){
 for(var i=0;i<5;i++){
 setTimeout(function(){
 var osc=ctx.createOscillator(),gain=ctx.createGain();
-osc.type='sawtooth';
-osc.connect(gain);gain.connect(ctx.destination);
+osc.type='sawtooth';osc.connect(gain);gain.connect(ctx.destination);
 osc.frequency.setValueAtTime(200+Math.random()*200,ctx.currentTime);
 osc.frequency.exponentialRampToValueAtTime(50,ctx.currentTime+0.2);
 gain.gain.setValueAtTime(0.15,ctx.currentTime);
@@ -123,7 +142,7 @@ var sn=[],ap={},nde={x:1,y:0},dir={x:1,y:0};
 var gid;
 function st(){
 play('start');
-sc=0;pl=true;speed=180;sn=[];
+sc=0;pl=true;speed=180;sn=[];lastEat=0;steps=0;
 var cx=Math.floor(c.width/sz/2),cy=Math.floor(c.height/sz/2);
 sn=[{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy}];
 nde={x:1,y:0};dir={x:1,y:0};sp();
@@ -145,10 +164,11 @@ for(var i=0;i<sn.length;i++){if(sn[i].x==nn.x&&sn[i].y==nn.y){nd();return}}
 sn.unshift(nn);
 if(nn.x==ap.x&&nn.y==ap.y){
 sc+=10+sn.length;
-play('eat');
+play('eat',sn.length);
 speed=Math.max(60,speed-5);
 sp();
 }else{sn.pop()}
+play('step');
 x.fillStyle='#22c55e';
 for(var i=0;i<sn.length;i++){
 var s=sn[i],r=i==0?0.9:0.7;
