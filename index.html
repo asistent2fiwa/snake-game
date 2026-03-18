@@ -138,7 +138,7 @@ if(sz<15)sz=15;if(sz>30)sz=30;
 window.onresize=rz;rz();
 var sc=0,pl=false,speed=180;
 var sn=[],ap={},nde={x:1,y:0},dir={x:1,y:0};
-var gid;
+var gid,lastEatTime;
 function st(){
 play('start');
 sc=0;pl=true;speed=180;sn=[];lastEatTime=Date.now();
@@ -152,6 +152,8 @@ document.getElementById('game').classList.add('active');lp();
 function sp(){ap={x:Math.floor(Math.random()*(c.width/sz-2))+1,y:Math.floor(Math.random()*(c.height/sz-4))+2}}
 function lp(){
 if(!pl)return;
+var now=Date.now();
+if(now-lastEatTime>5000){nd();return;}
 x.fillStyle='#000';x.fillRect(0,0,c.width,c.height);
 x.strokeStyle='#111';
 for(var i=0;i<c.width;i+=sz){x.beginPath();x.moveTo(i,0);x.lineTo(i,c.height);x.stroke()}
@@ -163,6 +165,7 @@ for(var i=0;i<sn.length;i++){if(sn[i].x==nn.x&&sn[i].y==nn.y){nd();return}}
 sn.unshift(nn);
 if(nn.x==ap.x&&nn.y==ap.y){
 sc+=10+sn.length;
+lastEatTime=Date.now();
 play('eat');
 speed=Math.max(60,speed-5);
 sp();
